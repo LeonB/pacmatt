@@ -142,6 +142,14 @@ Pacman.Ghost = function (game, map, colour) {
     };
 
     function draw(ctx) {
+        if (eatable && secondsAgo(eatable) > 8) {
+            eatable = null;
+        }
+
+        if (eaten && secondsAgo(eaten) > 3) {
+            eaten = null;
+        }
+
         if (GHOST_IMAGE) {
             drawCustomGhost(ctx);
         } else {
@@ -156,21 +164,24 @@ Pacman.Ghost = function (game, map, colour) {
 
         var img = new Image;
         img.src = GHOST_IMAGE;
+        img.style = 'border: 1px solid red;';
         image = ctx.drawImage(img, x, y, size, size);
+
+        var clr = getColour()
+
+        if (clr != colour) { //color is not default, make 'em light up
+            console.log(clr);
+            ctx.globalAlpha=0.5;
+            ctx.fillStyle = clr;
+            ctx.fillRect (x, y, size, size);
+            ctx.globalAlpha=1;
+        }
     }
 
     function drawClassicGhost(ctx) {
         var s    = map.blockSize,
             top  = (position.y/10) * s,
             left = (position.x/10) * s;
-
-        if (eatable && secondsAgo(eatable) > 8) {
-            eatable = null;
-        }
-
-        if (eaten && secondsAgo(eaten) > 3) {
-            eaten = null;
-        }
 
         var tl = left + s;
         var base = top + s - 3;
