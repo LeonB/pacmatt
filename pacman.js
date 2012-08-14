@@ -164,7 +164,18 @@ Pacman.Ghost = function (game, map, colour) {
 
         var img = new Image;
         img.src = GHOST_IMAGE;
+        img.style = 'border: 1px solid red;';
         image = ctx.drawImage(img, x, y, size, size);
+
+        var clr = getColour()
+
+        if (clr != colour) { //color is not default, make 'em light up
+            console.log(clr);
+            ctx.globalAlpha=0.5;
+            ctx.fillStyle = clr;
+            ctx.fillRect (x, y, size, size);
+            ctx.globalAlpha=1;
+        }
     }
 
     function drawClassicGhost(ctx) {
