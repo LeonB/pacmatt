@@ -142,6 +142,14 @@ Pacman.Ghost = function (game, map, colour) {
     };
 
     function draw(ctx) {
+        if (eatable && secondsAgo(eatable) > 8) {
+            eatable = null;
+        }
+
+        if (eaten && secondsAgo(eaten) > 3) {
+            eaten = null;
+        }
+
         if (GHOST_IMAGE) {
             drawCustomGhost(ctx);
         } else {
@@ -163,14 +171,6 @@ Pacman.Ghost = function (game, map, colour) {
         var s    = map.blockSize,
             top  = (position.y/10) * s,
             left = (position.x/10) * s;
-
-        if (eatable && secondsAgo(eatable) > 8) {
-            eatable = null;
-        }
-
-        if (eaten && secondsAgo(eaten) > 3) {
-            eaten = null;
-        }
 
         var tl = left + s;
         var base = top + s - 3;
