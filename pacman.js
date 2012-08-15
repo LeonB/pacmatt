@@ -21,7 +21,9 @@ var NONE        = 4,
     DYING       = 10,
     Pacman      = {},
     PACMAN_IMAGE = 'matt.png',
-    GHOST_IMAGE = 'chris.png';
+    GHOST_IMAGE = 'chris.png',
+    GHOST_EATABLE = null, //can be auto generated
+    GHOST_EATEN = null;  //can be auto generated
 
 Pacman.FPS = 30;
 
@@ -162,21 +164,91 @@ Pacman.Ghost = function (game, map, colour) {
         var x = ((position.x/10) * size);
         var y = ((position.y/10) * size);
 
+        // http://davidwalsh.name/convert-canvas-image
+        if (eatable) {
+            if (secondsAgo(eatable) > 5) {
+                return game.getTick() % 20 > 10 ? drawCustomGhostEaten(ctx) : drawCustomGhostEatable(ctx);
+            } else {
+                return drawCustomGhostEatable(ctx);
+            }
+        } else if(eaten) {
+            return drawCustomGhostEaten(ctx);
+        }
+
+        img = new Image;
+        img.src = GHOST_IMAGE;
+        return ctx.drawImage(img, x, y, size, size);
+    };
+
+    function drawCustomGhostEatable(ctx) {
+        if (!GHOST_EATABLE) {
+            GHOST_EATABLE = generateCustomGhostEatable(ctx);
+        }
+
+        var size = map.blockSize;
+        var x    = ((position.x/10) * size);
+        var y    = ((position.y/10) * size);
+        var img  = new Image;
+        img.src  = GHOST_EATABLE;
+        return ctx.drawImage(img, x, y, size, size);
+    }
+
+    function generateCustomGhostEatable(ctx) {
+        return generateCustomGhostColor(ctx, "#0000BB");
+    };
+
+    function drawCustomGhostEaten(ctx) {
+        if (!GHOST_EATEN) {
+            GHOST_EATEN = generateCustomGhostEaten(ctx);
+        }
+
+        var size = map.blockSize;
+        var x    = ((position.x/10) * size);
+        var y    = ((position.y/10) * size);
+        var img  = new Image;
+        img.src  = GHOST_EATEN;
+        return ctx.drawImage(img, x, y, size, size);
+    };
+
+    function generateCustomGhostEaten(ctx) {
+        return generateCustomGhostColor(ctx, "#fff");
+    };
+
+    function generateCustomGhostColor(ctx, color) {
+        var size = map.blockSize;
         var img = new Image;
         img.src = GHOST_IMAGE;
-        img.style = 'border: 1px solid red;';
-        image = ctx.drawImage(img, x, y, size, size);
 
-        var clr = getColour()
+        var img_canvas       = document.createElement("canvas");
+        img_canvas.setAttribute("width", size + "px");
+        img_canvas.setAttribute("height", size + "px");
+        var img_ctx          = img_canvas.getContext('2d');
+        img_ctx.drawImage(img, 0, 0, size, size);
+        img_data             = img_ctx.getImageData(0, 0, size, size);
+        var img_pix          = img_data.data;
 
-        if (clr != colour) { //color is not default, make 'em light up
-            console.log(clr);
-            ctx.globalAlpha=0.5;
-            ctx.fillStyle = clr;
-            ctx.fillRect (x, y, size, size);
-            ctx.globalAlpha=1;
+        var draw_canvas      = document.createElement("canvas");
+        draw_canvas.setAttribute("width", size + "px");
+        draw_canvas.setAttribute("height", size + "px");
+        var draw_ctx         = draw_canvas.getContext('2d');
+        draw_ctx.drawImage(img, 0, 0, size, size);
+        draw_ctx.globalAlpha = 0.5;
+        draw_ctx.fillStyle   = color;
+        draw_ctx.fillRect (0, 0, size, size);
+        draw_ctx.globalAlpha = 1;
+        draw_data            = draw_ctx.getImageData(0, 0, size, size);
+        var draw_pix         = draw_data.data;
+
+        // use alpha from img_canvas & colours from draw_canvas
+
+        // quickly iterate over all pixels
+        for(var i = 0, n = draw_pix.length; i < n; i += 4) {
+            draw_pix[i + 3] = img_pix[i + 3];
         }
-    }
+        draw_ctx.putImageData(draw_data, 0, 0); //put image data back on canvas
+
+        return draw_canvas.toDataURL("image/png");
+    };
 
     function drawClassicGhost(ctx) {
         var s    = map.blockSize,
@@ -823,7 +895,7 @@ var PACMAN = (function () {
     var state        = WAITING,
         audio        = null,
         ghosts       = [],
-        ghostSpecs   = ["#00FFDE", "#FF0000", "#FFB8DE", "#FFB847"],
+        ghostSpecs   = ["#00FFDE", "#FF0000", "#FFB8DE", "#FFB847"], //colours of the ghosts
         eatenCount   = 0,
         level        = 0,
         tick         = 0,
